@@ -38,7 +38,7 @@ class StreamSessionViewModel: ObservableObject {
   @Published var errorMessage: String = ""
   @Published var hasActiveDevice: Bool = false
   @Published var streamingMode: StreamingMode = .glasses
-  @Published var selectedResolution: StreamingResolution = .low
+  @Published var selectedResolution: StreamingResolution = .high
 
   var isStreaming: Bool {
     streamingStatus != .stopped
@@ -81,7 +81,7 @@ class StreamSessionViewModel: ObservableObject {
     self.deviceSelector = AutoDeviceSelector(wearables: wearables)
     let config = StreamSessionConfig(
       videoCodec: VideoCodec.raw,
-      resolution: StreamingResolution.low,
+      resolution: StreamingResolution.high,
       frameRate: 24)
     streamSession = StreamSession(streamSessionConfig: config, deviceSelector: deviceSelector)
 

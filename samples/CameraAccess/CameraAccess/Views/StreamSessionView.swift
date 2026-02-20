@@ -33,6 +33,9 @@ struct StreamSessionView: View {
       if viewModel.isStreaming {
         // Full-screen video view with streaming controls
         StreamView(viewModel: viewModel, wearablesVM: wearablesViewModel, geminiVM: geminiVM, webrtcVM: webrtcVM)
+      } else if wearablesViewModel.skipToIPhoneMode {
+        // Brief loading state while iPhone camera starts — show branded splash
+        Color(red: 0.0, green: 0.40, blue: 1.0).edgesIgnoringSafeArea(.all)
       } else {
         // Pre-streaming setup view with permissions and start button
         NonStreamView(viewModel: viewModel, wearablesVM: wearablesViewModel)
@@ -42,9 +45,18 @@ struct StreamSessionView: View {
       viewModel.geminiSessionVM = geminiVM
       viewModel.webrtcSessionVM = webrtcVM
       geminiVM.streamingMode = viewModel.streamingMode
+      if wearablesViewModel.skipToIPhoneMode && !viewModel.isStreaming {
+        await viewModel.handleStartIPhone()
+      }
     }
     .onChange(of: viewModel.streamingMode) { newMode in
       geminiVM.streamingMode = newMode
+    }
+    .onChange(of: viewModel.streamingStatus) { newStatus in
+      // When iPhone streaming stops, return to home screen
+      if newStatus == .stopped && wearablesViewModel.skipToIPhoneMode {
+        wearablesViewModel.skipToIPhoneMode = false
+      }
     }
     .onAppear {
       UIApplication.shared.isIdleTimerDisabled = true

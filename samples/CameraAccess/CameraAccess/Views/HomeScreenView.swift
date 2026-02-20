@@ -22,7 +22,7 @@ struct HomeScreenView: View {
 
   var body: some View {
     ZStack {
-      Color.white.edgesIgnoringSafeArea(.all)
+      Color(red: 0.0, green: 0.40, blue: 1.0).edgesIgnoringSafeArea(.all)
 
       VStack(spacing: 12) {
         HStack {
@@ -33,98 +33,70 @@ struct HomeScreenView: View {
             Image(systemName: "gearshape")
               .resizable()
               .aspectRatio(contentMode: .fit)
-              .foregroundColor(.black)
+              .foregroundColor(.white)
               .frame(width: 24, height: 24)
           }
         }
 
         Spacer()
 
-        Image(.cameraAccessIcon)
+        Image("Paramount Logo v2")
           .resizable()
           .aspectRatio(contentMode: .fit)
-          .frame(width: 120)
+          .frame(width: 160)
 
-        VStack(spacing: 12) {
-          HomeTipItemView(
-            resource: .smartGlassesIcon,
-            title: "Video Capture",
-            text: "Record videos directly from your glasses, from your point of view."
-          )
-          HomeTipItemView(
-            resource: .soundIcon,
-            title: "Open-Ear Audio",
-            text: "Hear notifications while keeping your ears open to the world around you."
-          )
-          HomeTipItemView(
-            resource: .walkingIcon,
-            title: "Enjoy On-the-Go",
-            text: "Stay hands-free while you move through your day. Move freely, stay connected."
-          )
-        }
+        Text("Welcome to Paramount Lens. You are standing on one of the most storied creative campuses in the world. Through this experience, uncover the productions, talent, and moments that shaped cultural history right where they happened.")
+          .font(.system(size: 18))
+          .foregroundColor(.white)
+          .multilineTextAlignment(.center)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.horizontal, 12)
+          .padding(.top, 8)
 
         Spacer()
 
         VStack(spacing: 20) {
           Text("You'll be redirected to the Meta AI app to confirm your connection.")
             .font(.system(size: 14))
-            .foregroundColor(.gray)
+            .foregroundColor(.white.opacity(0.7))
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 12)
 
-          CustomButton(
-            title: viewModel.registrationState == .registering ? "Connecting..." : "Connect my glasses",
-            style: .primary,
-            isDisabled: viewModel.registrationState == .registering
-          ) {
+          Button {
             viewModel.connectGlasses()
+          } label: {
+            Text(viewModel.registrationState == .registering ? "Connecting..." : "Connect my glasses")
+              .font(.system(size: 15, weight: .semibold))
+              .foregroundColor(.white)
+              .frame(maxWidth: .infinity)
+              .frame(height: 56)
+              .background(Color(red: 0.0, green: 0.12, blue: 0.36))
+              .cornerRadius(30)
           }
+          .disabled(viewModel.registrationState == .registering)
+          .opacity(viewModel.registrationState == .registering ? 0.6 : 1.0)
 
-          CustomButton(
-            title: "Start on iPhone",
-            style: .secondary,
-            isDisabled: false
-          ) {
+          Button {
             viewModel.skipToIPhoneMode = true
+          } label: {
+            Text("Start on iPhone")
+              .font(.system(size: 15, weight: .semibold))
+              .foregroundColor(.white)
+              .frame(maxWidth: .infinity)
+              .frame(height: 56)
+              .background(Color(red: 0.0, green: 0.12, blue: 0.36))
+              .cornerRadius(30)
           }
         }
       }
       .padding(.all, 24)
     }
     .sheet(isPresented: $showSettings) {
-      SettingsView()
+      SettingsView(connectAction: {
+        viewModel.connectGlasses()
+      })
     }
   }
 
-}
-
-struct HomeTipItemView: View {
-  let resource: ImageResource
-  let title: String
-  let text: String
-
-  var body: some View {
-    HStack(alignment: .top, spacing: 12) {
-      Image(resource)
-        .resizable()
-        .renderingMode(.template)
-        .foregroundColor(.black)
-        .aspectRatio(contentMode: .fit)
-        .frame(width: 24)
-        .padding(.leading, 4)
-        .padding(.top, 4)
-
-      VStack(alignment: .leading, spacing: 6) {
-        Text(title)
-          .font(.system(size: 18, weight: .semibold))
-          .foregroundColor(.black)
-
-        Text(text)
-          .font(.system(size: 15))
-          .foregroundColor(.gray)
-      }
-      Spacer()
-    }
-  }
 }

@@ -34,10 +34,11 @@ struct NonStreamView: View {
             Button("Settings") {
               showSettings = true
             }
-            Button("Disconnect", role: .destructive) {
-              wearablesVM.disconnectGlasses()
+            if wearablesVM.registrationState == .registered {
+              Button("Disconnect", role: .destructive) {
+                wearablesVM.disconnectGlasses()
+              }
             }
-            .disabled(wearablesVM.registrationState != .registered)
           } label: {
             Image(systemName: "gearshape")
               .resizable()
@@ -84,26 +85,6 @@ struct NonStreamView: View {
         .padding(.bottom, 12)
         .opacity(viewModel.hasActiveDevice ? 0 : 1)
 
-        // Resolution picker (glasses mode only)
-        VStack(spacing: 4) {
-          Text("Resolution")
-            .font(.system(size: 13))
-            .foregroundColor(.white.opacity(0.6))
-          Picker("Resolution", selection: Binding(
-            get: { viewModel.selectedResolution },
-            set: { viewModel.updateResolution($0) }
-          )) {
-            Text("Low").tag(StreamingResolution.low)
-            Text("Med").tag(StreamingResolution.medium)
-            Text("High").tag(StreamingResolution.high)
-          }
-          .pickerStyle(.segmented)
-          Text(viewModel.resolutionLabel)
-            .font(.system(size: 12, design: .monospaced))
-            .foregroundColor(.white.opacity(0.4))
-        }
-        .padding(.bottom, 12)
-
         CustomButton(
           title: "Start on iPhone",
           style: .secondary,
@@ -127,7 +108,9 @@ struct NonStreamView: View {
       .padding(.all, 24)
     }
     .sheet(isPresented: $showSettings) {
-      SettingsView()
+      SettingsView(disconnectAction: wearablesVM.registrationState == .registered ? {
+        wearablesVM.disconnectGlasses()
+      } : nil)
     }
     .sheet(isPresented: $wearablesVM.showGettingStartedSheet) {
       if #available(iOS 16.0, *) {

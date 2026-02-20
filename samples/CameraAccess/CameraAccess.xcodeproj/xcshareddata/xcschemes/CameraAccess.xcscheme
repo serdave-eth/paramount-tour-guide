@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "8A8A8A8A8A8A8A8A8A8A8A8A"
-               BuildableName = "CameraAccess.app"
+               BuildableName = "Paramount Lens.app"
                BlueprintName = "CameraAccess"
                ReferencedContainer = "container:CameraAccess.xcodeproj">
             </BuildableReference>
@@ -58,7 +58,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8A8A8A8A8A8A8A8A8A8A8A8A"
-            BuildableName = "CameraAccess.app"
+            BuildableName = "Paramount Lens.app"
             BlueprintName = "CameraAccess"
             ReferencedContainer = "container:CameraAccess.xcodeproj">
          </BuildableReference>
@@ -75,7 +75,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "8A8A8A8A8A8A8A8A8A8A8A8A"
-            BuildableName = "CameraAccess.app"
+            BuildableName = "Paramount Lens.app"
             BlueprintName = "CameraAccess"
             ReferencedContainer = "container:CameraAccess.xcodeproj">
          </BuildableReference>
