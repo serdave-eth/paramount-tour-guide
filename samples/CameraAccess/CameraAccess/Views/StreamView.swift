@@ -143,13 +143,6 @@ struct ControlsView: View {
         }
       }
 
-      // Photo button (glasses mode only -- DAT SDK capture)
-      if viewModel.streamingMode == .glasses {
-        CircleButton(icon: "camera.fill", text: nil) {
-          viewModel.capturePhoto()
-        }
-      }
-
       // Gemini AI button
       CircleButton(
         icon: geminiVM.isGeminiActive ? "waveform.circle.fill" : "waveform.circle",

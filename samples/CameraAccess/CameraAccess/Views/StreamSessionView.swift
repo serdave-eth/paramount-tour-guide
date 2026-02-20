@@ -35,10 +35,10 @@ struct StreamSessionView: View {
         StreamView(viewModel: viewModel, wearablesVM: wearablesViewModel, geminiVM: geminiVM)
       } else if wearablesViewModel.skipToIPhoneMode {
         // Brief loading state while iPhone camera starts
-        CameraLoadingView()
+        CameraLoadingView(isGlassesMode: false)
       } else if !hasAutoStartedGlasses {
         // Glasses mode: show loading while waiting for device and auto-connecting
-        CameraLoadingView()
+        CameraLoadingView(isGlassesMode: true)
       } else {
         // Fallback after auto-start (e.g. user stopped streaming manually)
         NonStreamView(viewModel: viewModel, wearablesVM: wearablesViewModel)
@@ -94,22 +94,34 @@ struct StreamSessionView: View {
 }
 
 struct CameraLoadingView: View {
+  var isGlassesMode: Bool = false
   @State private var dotCount = 0
   private let timer = Timer.publish(every: 0.4, on: .main, in: .common).autoconnect()
 
   var body: some View {
     ZStack {
-      Color.black.edgesIgnoringSafeArea(.all)
+      if isGlassesMode {
+        Color(red: 0.0, green: 0.40, blue: 1.0).edgesIgnoringSafeArea(.all)
+      } else {
+        Color.black.edgesIgnoringSafeArea(.all)
+      }
 
       VStack(spacing: 16) {
-        Image(systemName: "camera.fill")
-          .font(.system(size: 36))
-          .foregroundColor(.white.opacity(0.7))
+        if isGlassesMode {
+          Image("Paramount Logo v2")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 120)
+        }
 
-        Text("Opening Camera" + String(repeating: ".", count: dotCount))
+        ProgressView()
+          .progressViewStyle(CircularProgressViewStyle(tint: .white))
+          .scaleEffect(1.2)
+
+        Text(isGlassesMode ? "Connecting to glasses" + String(repeating: ".", count: dotCount) : "Opening Camera" + String(repeating: ".", count: dotCount))
           .font(.system(size: 18, weight: .medium))
           .foregroundColor(.white)
-          .frame(width: 200, alignment: .center)
+          .frame(width: 260, alignment: .center)
       }
     }
     .onReceive(timer) { _ in

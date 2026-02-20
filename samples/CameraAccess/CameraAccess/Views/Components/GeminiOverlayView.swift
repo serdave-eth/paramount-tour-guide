@@ -7,9 +7,6 @@ struct GeminiStatusBar: View {
     HStack(spacing: 8) {
       // Gemini connection pill
       StatusPill(color: geminiStatusColor, text: geminiStatusText)
-
-      // OpenClaw connection pill
-      StatusPill(color: openClawStatusColor, text: openClawStatusText)
     }
   }
 

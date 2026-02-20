@@ -109,9 +109,14 @@ struct HomeScreenView: View {
       .padding(.all, 24)
     }
     .sheet(isPresented: $showSettings) {
-      SettingsView(connectAction: {
-        viewModel.connectGlasses()
-      })
+      SettingsView(
+        connectAction: viewModel.registrationState != .registered ? {
+          viewModel.connectGlasses()
+        } : nil,
+        disconnectAction: viewModel.registrationState == .registered ? {
+          viewModel.disconnectGlasses()
+        } : nil
+      )
     }
   }
 
