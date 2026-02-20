@@ -33,14 +33,15 @@ struct CameraAccessApp: App {
   @StateObject private var wearablesViewModel: WearablesViewModel
 
   init() {
+    NSLog("[CameraAccess] App init — configuring Wearables SDK...")
     do {
       try Wearables.configure()
+      NSLog("[CameraAccess] Wearables SDK configured successfully")
     } catch {
-      #if DEBUG
-      NSLog("[CameraAccess] Failed to configure Wearables SDK: \(error)")
-      #endif
+      NSLog("[CameraAccess] Failed to configure Wearables SDK: %@", String(describing: error))
     }
     let wearables = Wearables.shared
+    NSLog("[CameraAccess] Wearables.shared — registrationState: %@, devices: %d", String(describing: wearables.registrationState), wearables.devices.count)
     self.wearables = wearables
     self._wearablesViewModel = StateObject(wrappedValue: WearablesViewModel(wearables: wearables))
   }

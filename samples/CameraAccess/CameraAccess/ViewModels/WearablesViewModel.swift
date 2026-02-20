@@ -43,6 +43,13 @@ class WearablesViewModel: ObservableObject {
     self.hasMockDevice = false
     self.registrationState = wearables.registrationState
 
+    NSLog("[Wearables] Init — registrationState: %@, devices count: %d", String(describing: wearables.registrationState), wearables.devices.count)
+    for device in wearables.devices {
+      if let d = wearables.deviceForIdentifier(device) {
+        NSLog("[Wearables] Init — found device: %@ (id: %@)", d.nameOrId(), String(describing: device))
+      }
+    }
+
     // Set up device stream immediately to handle MockDevice events
     setupDeviceStreamTask = Task {
       await setupDeviceStream()
@@ -52,6 +59,7 @@ class WearablesViewModel: ObservableObject {
       for await registrationState in wearables.registrationStateStream() {
         let previousState = self.registrationState
         self.registrationState = registrationState
+        NSLog("[Wearables] Registration state changed: %@ -> %@", String(describing: previousState), String(describing: registrationState))
         if self.showGettingStartedSheet == false && registrationState == .registered && previousState == .registering {
           self.showGettingStartedSheet = true
         }
@@ -70,8 +78,17 @@ class WearablesViewModel: ObservableObject {
       task.cancel()
     }
 
+    NSLog("[Wearables] Setting up device stream...")
     deviceStreamTask = Task {
       for await devices in wearables.devicesStream() {
+        NSLog("[Wearables] Device stream update — %d device(s)", devices.count)
+        for device in devices {
+          if let d = wearables.deviceForIdentifier(device) {
+            NSLog("[Wearables]   Device: %@ (id: %@)", d.nameOrId(), String(describing: device))
+          } else {
+            NSLog("[Wearables]   Device id: %@ (no Device object)", String(describing: device))
+          }
+        }
         self.devices = devices
         #if canImport(MWDATMockDevice)
         self.hasMockDevice = !MockDeviceKit.shared.pairedDevices.isEmpty
@@ -90,11 +107,17 @@ class WearablesViewModel: ObservableObject {
     // Add listeners for new devices
     for deviceId in devices {
       guard compatibilityListenerTokens[deviceId] == nil else { continue }
-      guard let device = wearables.deviceForIdentifier(deviceId) else { continue }
+      guard let device = wearables.deviceForIdentifier(deviceId) else {
+        NSLog("[Wearables] Could not get Device object for id: %@", String(describing: deviceId))
+        continue
+      }
 
-      // Capture device name before the closure to avoid Sendable issues
+      // Log all available device info
       let deviceName = device.nameOrId()
+      NSLog("[Wearables] Monitoring device: %@, compatibility: %@", deviceName, String(describing: device.compatibility))
+
       let token = device.addCompatibilityListener { [weak self] compatibility in
+        NSLog("[Wearables] Compatibility changed for '%@': %@", deviceName, String(describing: compatibility))
         guard let self else { return }
         if compatibility == .deviceUpdateRequired {
           Task { @MainActor in

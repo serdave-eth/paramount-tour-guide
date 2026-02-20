@@ -86,9 +86,23 @@ class StreamSessionViewModel: ObservableObject {
     streamSession = StreamSession(streamSessionConfig: config, deviceSelector: deviceSelector)
 
     // Monitor device availability
+    NSLog("[Stream] Starting activeDeviceStream monitor. Selector activeDevice: %@", String(describing: deviceSelector.activeDevice))
+    NSLog("[Stream] Wearables devices at stream init: %d", wearables.devices.count)
+    for devId in wearables.devices {
+      if let d = wearables.deviceForIdentifier(devId) {
+        NSLog("[Stream]   Device at init: %@, compatibility: %@", d.nameOrId(), String(describing: d.compatibility))
+      }
+    }
     deviceMonitorTask = Task { @MainActor in
-      for await device in deviceSelector.activeDeviceStream() {
-        self.hasActiveDevice = device != nil
+      for await deviceId in deviceSelector.activeDeviceStream() {
+        let hadDevice = self.hasActiveDevice
+        self.hasActiveDevice = deviceId != nil
+        if let deviceId = deviceId {
+          let name = wearables.deviceForIdentifier(deviceId)?.nameOrId() ?? deviceId
+          NSLog("[Stream] Active device became available: %@ (was hasActiveDevice=%@)", name, hadDevice ? "true" : "false")
+        } else {
+          NSLog("[Stream] Active device became nil (was hasActiveDevice=%@). Selector.activeDevice: %@", hadDevice ? "true" : "false", String(describing: self.deviceSelector.activeDevice))
+        }
       }
     }
 
@@ -112,6 +126,7 @@ class StreamSessionViewModel: ObservableObject {
   private func attachListeners() {
     // Subscribe to session state changes using the DAT SDK listener pattern
     stateListenerToken = streamSession.statePublisher.listen { [weak self] state in
+      NSLog("[Stream] StreamSession state changed: %@", String(describing: state))
       Task { @MainActor [weak self] in
         self?.updateStatusFromState(state)
       }
@@ -137,6 +152,7 @@ class StreamSessionViewModel: ObservableObject {
 
     // Subscribe to streaming errors
     errorListenerToken = streamSession.errorPublisher.listen { [weak self] error in
+      NSLog("[Stream] StreamSession error: %@", String(describing: error))
       Task { @MainActor [weak self] in
         guard let self else { return }
         // Suppress device-not-found errors when user hasn't started streaming yet
