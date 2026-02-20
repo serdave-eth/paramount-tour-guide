@@ -40,8 +40,8 @@ struct StreamSessionView: View {
         // Glasses mode: show loading while waiting for device and auto-connecting
         CameraLoadingView(isGlassesMode: true)
       } else {
-        // Fallback after auto-start (e.g. user stopped streaming manually)
-        NonStreamView(viewModel: viewModel, wearablesVM: wearablesViewModel)
+        // Fallback after auto-start — show branded loading while reconnecting
+        CameraLoadingView(isGlassesMode: true)
       }
     }
     .task {

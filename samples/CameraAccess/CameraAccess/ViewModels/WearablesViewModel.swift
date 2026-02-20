@@ -26,7 +26,6 @@ class WearablesViewModel: ObservableObject {
   @Published var devices: [DeviceIdentifier]
   @Published var hasMockDevice: Bool
   @Published var registrationState: RegistrationState
-  @Published var showGettingStartedSheet: Bool = false
   @Published var showError: Bool = false
   @Published var errorMessage: String = ""
   @Published var skipToIPhoneMode: Bool = false
@@ -63,7 +62,6 @@ class WearablesViewModel: ObservableObject {
         NSLog("[Wearables] Registration state changed: %@ -> %@", String(describing: previousState), String(describing: registrationState))
         if registrationState == .registered && previousState == .registering {
           self.showGlassesSession = true
-          self.showGettingStartedSheet = true
         }
       }
     }
