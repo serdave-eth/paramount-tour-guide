@@ -30,6 +30,7 @@ class WearablesViewModel: ObservableObject {
   @Published var showError: Bool = false
   @Published var errorMessage: String = ""
   @Published var skipToIPhoneMode: Bool = false
+  @Published var showGlassesSession: Bool = false
 
   private var registrationTask: Task<Void, Never>?
   private var deviceStreamTask: Task<Void, Never>?
@@ -60,7 +61,8 @@ class WearablesViewModel: ObservableObject {
         let previousState = self.registrationState
         self.registrationState = registrationState
         NSLog("[Wearables] Registration state changed: %@ -> %@", String(describing: previousState), String(describing: registrationState))
-        if self.showGettingStartedSheet == false && registrationState == .registered && previousState == .registering {
+        if registrationState == .registered && previousState == .registering {
+          self.showGlassesSession = true
           self.showGettingStartedSheet = true
         }
       }

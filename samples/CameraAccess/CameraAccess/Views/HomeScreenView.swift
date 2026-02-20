@@ -20,6 +20,16 @@ struct HomeScreenView: View {
   @ObservedObject var viewModel: WearablesViewModel
   @State private var showSettings = false
 
+  private var glassesButtonLabel: String {
+    if viewModel.registrationState == .registered {
+      return "Experience the Lot"
+    } else if viewModel.registrationState == .registering {
+      return "Connecting..."
+    } else {
+      return "Connect my glasses"
+    }
+  }
+
   var body: some View {
     ZStack {
       Color(red: 0.0, green: 0.40, blue: 1.0).edgesIgnoringSafeArea(.all)
@@ -56,17 +66,23 @@ struct HomeScreenView: View {
         Spacer()
 
         VStack(spacing: 20) {
-          Text("You'll be redirected to the Meta AI app to confirm your connection.")
-            .font(.system(size: 14))
-            .foregroundColor(.white.opacity(0.7))
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 12)
+          if viewModel.registrationState != .registered {
+            Text("You'll be redirected to the Meta AI app to confirm your connection.")
+              .font(.system(size: 14))
+              .foregroundColor(.white.opacity(0.7))
+              .multilineTextAlignment(.center)
+              .fixedSize(horizontal: false, vertical: true)
+              .padding(.horizontal, 12)
+          }
 
           Button {
-            viewModel.connectGlasses()
+            if viewModel.registrationState == .registered {
+              viewModel.showGlassesSession = true
+            } else {
+              viewModel.connectGlasses()
+            }
           } label: {
-            Text(viewModel.registrationState == .registering ? "Connecting..." : "Connect my glasses")
+            Text(glassesButtonLabel)
               .font(.system(size: 15, weight: .semibold))
               .foregroundColor(.white)
               .frame(maxWidth: .infinity)

@@ -21,7 +21,6 @@ struct StreamView: View {
   @ObservedObject var viewModel: StreamSessionViewModel
   @ObservedObject var wearablesVM: WearablesViewModel
   @ObservedObject var geminiVM: GeminiSessionViewModel
-  @ObservedObject var webrtcVM: WebRTCSessionViewModel
 
   var body: some View {
     ZStack {
@@ -29,14 +28,8 @@ struct StreamView: View {
       Color.black
         .edgesIgnoringSafeArea(.all)
 
-      // Video backdrop: PiP when WebRTC connected, otherwise single local feed
-      if webrtcVM.isActive && webrtcVM.connectionState == .connected {
-        PiPVideoView(
-          localFrame: viewModel.currentVideoFrame,
-          remoteVideoTrack: webrtcVM.remoteVideoTrack,
-          hasRemoteVideo: webrtcVM.hasRemoteVideo
-        )
-      } else if let videoFrame = viewModel.currentVideoFrame, viewModel.hasReceivedFirstFrame {
+      // Video backdrop
+      if let videoFrame = viewModel.currentVideoFrame, viewModel.hasReceivedFirstFrame {
         GeometryReader { geometry in
           Image(uiImage: videoFrame)
             .resizable()
@@ -85,19 +78,17 @@ struct StreamView: View {
         .padding(.all, 24)
       }
 
-      // WebRTC status overlay (top)
-      if webrtcVM.isActive {
-        VStack {
-          WebRTCStatusBar(webrtcVM: webrtcVM)
-          Spacer()
-        }
-        .padding(.all, 24)
-      }
-
       // Bottom controls layer
       VStack {
         Spacer()
-        ControlsView(viewModel: viewModel, geminiVM: geminiVM, webrtcVM: webrtcVM)
+
+        // AI hint when session is idle
+        if !geminiVM.isGeminiActive {
+          AIHintView()
+            .padding(.bottom, 8)
+        }
+
+        ControlsView(viewModel: viewModel, geminiVM: geminiVM)
       }
       .padding(.all, 24)
     }
@@ -108,9 +99,6 @@ struct StreamView: View {
         }
         if geminiVM.isGeminiActive {
           geminiVM.stopSession()
-        }
-        if webrtcVM.isActive {
-          webrtcVM.stopSession()
         }
       }
     }
@@ -134,15 +122,6 @@ struct StreamView: View {
     } message: {
       Text(geminiVM.errorMessage ?? "")
     }
-    // WebRTC error alert
-    .alert("Live Stream", isPresented: Binding(
-      get: { webrtcVM.errorMessage != nil },
-      set: { if !$0 { webrtcVM.errorMessage = nil } }
-    )) {
-      Button("OK") { webrtcVM.errorMessage = nil }
-    } message: {
-      Text(webrtcVM.errorMessage ?? "")
-    }
   }
 }
 
@@ -150,7 +129,6 @@ struct StreamView: View {
 struct ControlsView: View {
   @ObservedObject var viewModel: StreamSessionViewModel
   @ObservedObject var geminiVM: GeminiSessionViewModel
-  @ObservedObject var webrtcVM: WebRTCSessionViewModel
 
   var body: some View {
     // Controls row
@@ -172,7 +150,7 @@ struct ControlsView: View {
         }
       }
 
-      // Gemini AI button (disabled when WebRTC is active — audio conflict)
+      // Gemini AI button
       CircleButton(
         icon: geminiVM.isGeminiActive ? "waveform.circle.fill" : "waveform.circle",
         text: "AI"
@@ -185,26 +163,30 @@ struct ControlsView: View {
           }
         }
       }
-      .opacity(webrtcVM.isActive ? 0.4 : 1.0)
-      .disabled(webrtcVM.isActive)
+    }
+  }
+}
 
-      // WebRTC Live Stream button (disabled when Gemini is active — audio conflict)
-      CircleButton(
-        icon: webrtcVM.isActive
-          ? "antenna.radiowaves.left.and.right.circle.fill"
-          : "antenna.radiowaves.left.and.right.circle",
-        text: "Live"
-      ) {
-        Task {
-          if webrtcVM.isActive {
-            webrtcVM.stopSession()
-          } else {
-            await webrtcVM.startSession()
-          }
-        }
+struct AIHintView: View {
+  @State private var visible = false
+
+  var body: some View {
+    HStack(spacing: 6) {
+      Image(systemName: "hand.tap.fill")
+        .font(.system(size: 14))
+      Text("Tap **AI** and ask \"What do you see?\"")
+        .font(.system(size: 14))
+    }
+    .foregroundColor(.white)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 10)
+    .background(Color.black.opacity(0.6))
+    .cornerRadius(16)
+    .opacity(visible ? 1.0 : 0.0)
+    .onAppear {
+      withAnimation(.easeIn(duration: 0.8).delay(1.5)) {
+        visible = true
       }
-      .opacity(geminiVM.isGeminiActive ? 0.4 : 1.0)
-      .disabled(geminiVM.isGeminiActive)
     }
   }
 }

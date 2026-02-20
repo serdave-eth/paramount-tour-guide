@@ -17,6 +17,8 @@ class GeminiSessionViewModel: ObservableObject {
   private let audioManager = AudioManager()
   private var lastVideoFrameTime: Date = .distantPast
   private var stateObservation: Task<Void, Never>?
+  private var pendingAIText: [String] = []
+  private var textRevealTask: Task<Void, Never>?
 
   var streamingMode: StreamingMode = .glasses
 
@@ -46,13 +48,19 @@ class GeminiSessionViewModel: ObservableObject {
     }
 
     geminiService.onInterrupted = { [weak self] in
-      self?.audioManager.stopPlayback()
+      guard let self else { return }
+      Task { @MainActor in
+        self.textRevealTask?.cancel()
+        self.textRevealTask = nil
+        self.pendingAIText.removeAll()
+      }
+      self.audioManager.stopPlayback()
     }
 
     geminiService.onTurnComplete = { [weak self] in
       guard let self else { return }
       Task { @MainActor in
-        // Clear user transcript when AI finishes responding
+        self.flushPendingText()
         self.userTranscript = ""
       }
     }
@@ -60,6 +68,9 @@ class GeminiSessionViewModel: ObservableObject {
     geminiService.onInputTranscription = { [weak self] text in
       guard let self else { return }
       Task { @MainActor in
+        self.textRevealTask?.cancel()
+        self.textRevealTask = nil
+        self.pendingAIText.removeAll()
         self.userTranscript += text
         self.aiTranscript = ""
       }
@@ -68,7 +79,9 @@ class GeminiSessionViewModel: ObservableObject {
     geminiService.onOutputTranscription = { [weak self] text in
       guard let self else { return }
       Task { @MainActor in
-        self.aiTranscript += text
+        let words = text.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+        self.pendingAIText.append(contentsOf: words)
+        self.startTextRevealIfNeeded()
       }
     }
 
@@ -163,6 +176,9 @@ class GeminiSessionViewModel: ObservableObject {
   }
 
   func stopSession() {
+    textRevealTask?.cancel()
+    textRevealTask = nil
+    pendingAIText.removeAll()
     toolCallRouter?.cancelAll()
     toolCallRouter = nil
     audioManager.stopCapture()
@@ -175,6 +191,36 @@ class GeminiSessionViewModel: ObservableObject {
     userTranscript = ""
     aiTranscript = ""
     toolCallStatus = .idle
+  }
+
+  private func startTextRevealIfNeeded() {
+    guard textRevealTask == nil, !pendingAIText.isEmpty else { return }
+    textRevealTask = Task { @MainActor [weak self] in
+      while let self, !self.pendingAIText.isEmpty {
+        let word = self.pendingAIText.removeFirst()
+        if self.aiTranscript.isEmpty {
+          self.aiTranscript = word
+        } else {
+          self.aiTranscript += " " + word
+        }
+        try? await Task.sleep(nanoseconds: 285_000_000) // ~3.5 words/sec
+      }
+      self?.textRevealTask = nil
+    }
+  }
+
+  private func flushPendingText() {
+    textRevealTask?.cancel()
+    textRevealTask = nil
+    if !pendingAIText.isEmpty {
+      let remaining = pendingAIText.joined(separator: " ")
+      if aiTranscript.isEmpty {
+        aiTranscript = remaining
+      } else {
+        aiTranscript += " " + remaining
+      }
+      pendingAIText.removeAll()
+    }
   }
 
   func sendVideoFrameIfThrottled(image: UIImage) {
